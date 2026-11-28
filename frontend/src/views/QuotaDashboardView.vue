@@ -83,6 +83,9 @@
       <p v-else class="empty-state">暂无功率配额数据</p>
     </section>
 
+    <!-- 配额对账包 -->
+    <QuotaPackagePanel />
+
     <!-- 排期冲突 -->
     <section class="dashboard-card">
       <h4>排期冲突（{{ summary?.schedule_conflict_count ?? 0 }}）</h4>
@@ -105,6 +108,7 @@
 import { ref, onMounted } from 'vue'
 import { fetchQuotaSummary, fetchDAGStatus } from '@/api/exhibition-client'
 import type { QuotaSummary, DAGStatus } from '@/data/exhibition-types'
+import QuotaPackagePanel from '@/views/QuotaPackagePanel.vue'
 
 const summary = ref<QuotaSummary | null>(null)
 const dagStatus = ref<DAGStatus | null>(null)

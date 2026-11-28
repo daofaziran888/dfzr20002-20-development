@@ -17,6 +17,7 @@
 ├── backend/                  FastAPI（Python） 后端
 │   ├── app/routers/resource.py  通用查询/导出/登记/动作接口
 │   ├── app/services/<key>.py    每个模块独立领域逻辑
+│   ├── app/services/quota_package.py  配额对账包：面积/功率同轮快照、排位签发
 │   ├── app/services/base.py     共享服务骨架
 │   └── app/store.py          内存数据仓库与示例数据
 ├── .gitignore
@@ -68,6 +69,25 @@ npm run dev
 | 布展排期 | `schedule` | 排期计划 | 活动名称、布展起始、撤展截止 |
 | 交场确认 | `handover` | 交场单 | 交出班组、接收人员、遗留事项 |
 | 突发事件 | `incident` | 事件记录 | 事件类型、发生位置、处置班组 |
+
+## 配额对账包
+
+看板除即时汇总外，还支持把「面积占用 + 功率核验」封成同一轮的配额对账包，供展位编排复核和排位签发。
+
+- `POST /api/exhibition/quota/packages` 保存对账包。允许只存面积（功率仍在核算时返回
+  `核对未完成` 提示），包本身是只读快照，**不登记展位、不增加面积占用**。
+- 保存/签发接受 `client_request_id`：响应中断后用同一值重试会拿回原包号，不重复建包。
+- 同一场馆未完成的包会把新快照作为下一轮追加，包号不变；`GET .../packages/latest` 可刷新包号。
+- `POST .../packages/{package_no}/complete` 补齐功率：在新一轮里**重新封存面积与功率**，
+  两者同轮后才成为签发依据。场馆后续更正的余量（如 28㎡ → 12㎡）会在补齐轮生效，
+  旧余量记入 `superseded_areas`。
+- `GET .../packages/{package_no}` 主管凭包号回查面积明细、功率明细、所依据的现场版本与采用轮次。
+- `GET .../packages/{package_no}/readiness` 只读核对结论；未完成时给提示，不阻断查询。
+- `POST .../packages/{package_no}/placements` 凭包办排位：缺项的包返回 400 提示，
+  不能凭缺一项的包办成新排位。
+
+前端 `QuotaDashboardView` 内的「配额对账包」面板提供保存、包号回查、刷新最新包号、
+补齐功率与凭包办排位。
 
 ## 约定
 
